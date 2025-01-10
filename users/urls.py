@@ -1,12 +1,22 @@
 from django.urls import path
-from rest_framework.urlpatterns import format_suffix_patterns
-from .views import UserRegisterView, OTPVerifyView, UserLoginView
+from .views import UserRegisterView, UserLoginView, OTPVerifyView, UserProfileView, TokenRefreshView, LogoutView
 
 urlpatterns = [
-    path('register/', UserRegisterView.as_view(), name='user_register'),
-    path('<int:user_id>/verify/', OTPVerifyView.as_view(), name='otp_verify'),
-    path('login/', UserLoginView.as_view(), name='user_login'),
-]
+    # User registration
+    path('register/', UserRegisterView.as_view(), name='user-register'),
 
-# Optional: Add format suffixes (e.g., .json, .api)
-urlpatterns = format_suffix_patterns(urlpatterns)
+    # User login
+    path('login/', UserLoginView.as_view(), name='user-login'),
+
+    # OTP verification
+    path('verify/', OTPVerifyView.as_view(), name='otp-verify'),
+
+    # User profile (GET and PUT)
+    path('profile/', UserProfileView.as_view(), name='user-profile'),
+
+    # for refrehsing access tokens
+    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+
+    # logout view
+    path('logout/', LogoutView.as_view(), name='logout'),
+]
