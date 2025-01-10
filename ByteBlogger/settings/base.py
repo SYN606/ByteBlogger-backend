@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -10,7 +11,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'rest_framework',  # Django REST Framework
+    'rest_framework_simplejwt',
     'django.contrib.staticfiles',  # Static files
+    'users',
 ]
 
 # Middleware
@@ -75,7 +78,7 @@ REST_FRAMEWORK = {
     ],
     # Default authentication classes
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',  # Token-based authentication
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     # Pagination settings (if needed for large sets of data)
     'DEFAULT_PAGINATION_CLASS':
@@ -96,6 +99,13 @@ REST_FRAMEWORK = {
     # Enable versioning of the API
     'DEFAULT_VERSIONING_CLASS':
     'rest_framework.versioning.AcceptHeaderVersioning',  # Enable versioning via Accept header
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Access token lifetime
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Refresh token lifetime
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # CORS (Cross-Origin Resource Sharing) settings (if needed for your API)
