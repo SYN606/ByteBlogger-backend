@@ -39,7 +39,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'user', 'avatar', 'full_name', 'email_address', 'username',
             'topic_interests'
         ]
-
+ 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         user = UserSerializer.create(UserSerializer(),

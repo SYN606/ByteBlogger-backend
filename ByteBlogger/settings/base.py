@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from . import jwt_config
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'users',
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -51,17 +53,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ByteBlogger.wsgi.application'
-
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', ''),
-    }
-}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -131,3 +122,5 @@ LOGGING = {
         },
     },
 }
+
+SIMPLE_JWT = jwt_config.SIMPLE_JWT
