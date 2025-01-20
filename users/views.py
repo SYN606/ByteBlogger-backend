@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
-from .models import User, OTPRequest, UserProfile, NewsletterSubscription
+from .models import User, OTPRequest, UserProfile
 from .serializers import UserSerializer, UserProfileSerializer
 from .otp import generate_otp, send_otp_email
 
@@ -45,11 +45,6 @@ class UserRegisterView(APIView):
             otp = generate_otp()
             OTPRequest.objects.create(user=user, otp=otp)
             send_otp_email(user.email, otp)
-
-            # Handle newsletter subscription
-            if request.data.get("newsletter", False):
-                NewsletterSubscription.objects.create(user=user,
-                                                      email=user.email)
 
             return Response(
                 {
@@ -171,16 +166,6 @@ class UserProfileView(APIView):
                                            partial=True)
         if serializer.is_valid():
             serializer.save()
-
-            # Handle newsletter subscription
-            newsletter = request.data.get("newsletter")
-            if newsletter is not None:
-                if newsletter:
-                    NewsletterSubscription.objects.get_or_create(
-                        user=user, email=user.email)
-                else:
-                    NewsletterSubscription.objects.filter(user=user).delete()
-
             return Response({"message": "Profile updated successfully."},
                             status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

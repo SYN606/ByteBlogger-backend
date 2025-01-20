@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserProfile, OTPRequest, NewsletterSubscription
+from .models import User, UserProfile, OTPRequest
 
 
 @admin.register(User)
@@ -57,9 +57,3 @@ class OTPRequestAdmin(admin.ModelAdmin):
     is_expired.boolean = True
     is_expired.short_description = 'Expired'
 
-
-@admin.register(NewsletterSubscription)
-class NewsletterSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'email', 'subscribed_on')
-    search_fields = ('email', 'user__email')
-    ordering = ('-subscribed_on', )
