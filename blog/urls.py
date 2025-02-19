@@ -1,11 +1,15 @@
 from django.urls import path
-from . import views
+from .views import BlogListView, BlogDetailView, BlogByCategoryView, CommentCreateView
 
 urlpatterns = [
-    path('', views.all_blogs, name='all_blogs'),  # List all blogs
-    path('<slug:slug>/', views.blog_detail,
-         name='blog_detail'),  # Single blog detail based on the slug
-    path('category/<slug:category_slug>/',
-         views.blogs_by_category,
-         name='blogs_by_category'),  # Blogs by category
+    path('blog/', BlogListView.as_view(), name='blog-list'
+         ),  # GET all blogs / POST new blog (only authors/admins)
+    path('blog/<slug:slug>/', BlogDetailView.as_view(),
+         name='blog-detail'),  # GET single blog
+    path('blog/cat-<slug:category_slug>/',
+         BlogByCategoryView.as_view(),
+         name='blogs-by-category'),  # GET blogs in category
+    path('blog/<slug:slug>/comment/',
+         CommentCreateView.as_view(),
+         name='add-comment'),  # POST comment
 ]
