@@ -1,10 +1,10 @@
-from django.http import JsonResponse
+# from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.exceptions import AuthenticationFailed
+# from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from .models import User, OTPRequest, UserProfile
@@ -74,7 +74,7 @@ class UserLoginView(APIView):
             return Response({"error": "Invalid credentials."},
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if not user.is_verified:
+        if not user.is_verified: # type: ignore
             otp = generate_otp()
             OTPRequest.objects.create(user=user, otp=otp)
             send_otp_email(user.email, otp)
