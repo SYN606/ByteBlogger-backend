@@ -16,7 +16,7 @@ Features
 
 Project Structure
 -----------------
-
+```
 ByteBlogger-backend/
 ├── ByteBlogger/
 │   ├── \_\_init\_\_.py
@@ -43,7 +43,7 @@ ByteBlogger-backend/
 │   └── views.py
 ├── manage.py
 └── requirements.txt
-    
+ ```   
 
 Installation
 ------------
