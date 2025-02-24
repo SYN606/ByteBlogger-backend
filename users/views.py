@@ -44,14 +44,14 @@ class UserRegisterView(APIView):
             user = serializer.save()
             otp = generate_otp()
             OTPRequest.objects.create(user=user, otp=otp)
-            send_otp_email(user.email, otp)
+            response = send_otp_email(user.email, otp)
 
             return Response(
                 {
                     "user_id":
                     user.id,
-                    "message":
-                    "User registered successfully. Please verify your email with the OTP sent."
+                    "response":
+                    response, # will return true if otp is sent on correct address 
                 },
                 status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -74,7 +74,7 @@ class UserLoginView(APIView):
             return Response({"error": "Invalid credentials."},
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        if not user.is_verified: # type: ignore
+        if not user.is_verified:  # type: ignore
             otp = generate_otp()
             OTPRequest.objects.create(user=user, otp=otp)
             send_otp_email(user.email, otp)
