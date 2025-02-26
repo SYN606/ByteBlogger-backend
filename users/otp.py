@@ -5,22 +5,41 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
-from .models import OTPRequest
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-import smtplib
+from django.contrib.auth.hashers import make_password, check_password
+from users.models import OTPRequest  # Assuming this is your OTP model
 
 logger = logging.getLogger(__name__)
+
+# Default OTP limit (if not in settings)
+OTP_LIMIT = getattr(settings, "OTP_MAX_REQUESTS", 4)
 
 
 def can_send_otp(email):
     """
-    Check if an OTP can be sent (Max 4 OTPs in 24 hours).
+    Check if an OTP can be sent to the given email.
+    - Limits requests to a configurable max (default: 4) in a rolling 24-hour window.
+    - Prevents OTP spam (1 per minute).
     """
-    if OTPRequest.count_requests_in_last_24hrs(email) >= 4:
-        logger.warning(f"OTP limit reached for {email}.")
-        return False, "You can request up to 4 OTPs per 24 hours."
-    return True, "OTP can be sent."
+    time_threshold = timezone.now() - timedelta(hours=24)
+    last_minute_threshold = timezone.now() - timedelta(
+        minutes=1)  # New cooldown check
+
+    request_count = OTPRequest.objects.filter(
+        email=email, created_at__gte=time_threshold).count()
+    last_request = OTPRequest.objects.filter(
+        email=email, created_at__gte=last_minute_threshold).exists()
+
+    remaining_attempts = OTP_LIMIT - request_count
+
+    if last_request:
+        return False, "Please wait 1 minute before requesting another OTP."
+
+    if request_count >= OTP_LIMIT:
+        return False, f"You have reached the OTP limit ({OTP_LIMIT} per 24 hours). Try again later."
+
+    return True, f"OTP can be sent. Remaining attempts: {remaining_attempts}"
 
 
 def generate_otp():
@@ -46,27 +65,23 @@ def send_otp_email(email, otp):
         logger.info(f"OTP sent successfully to {email}.")
         return True
 
-    except (ValidationError, smtplib.SMTPRecipientsRefused) as e:
-        logger.error(
-            f"Invalid email or recipient refused: {email}. Error: {e}")
-    except smtplib.SMTPException as e:
-        logger.error(f"SMTP error occurred for {email}: {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error while sending OTP to {email}: {e}")
+    except (ValidationError, Exception) as e:
+        logger.error(f"Error sending OTP to {email}: {e}")
 
     return False
 
 
 def create_otp_request(user, email):
     """
-    Generates OTP, stores it in DB, and sends it via email.
+    Generates OTP, stores it in DB securely (hashed), and sends it via email.
     Returns the generated OTP.
     """
     otp = generate_otp()
+    hashed_otp = make_password(otp)  # Hash OTP before storing
 
     otp_request = OTPRequest.objects.create(user=user,
                                             email=email,
-                                            otp=otp,
+                                            otp=hashed_otp,
                                             expiration_time=timezone.now() +
                                             timedelta(minutes=5))
 
@@ -85,15 +100,14 @@ def validate_otp(email, otp_input):
     """
     try:
         otp_request = OTPRequest.objects.filter(
-            email=email,
-            request_time__gte=timezone.now() -
-            timedelta(minutes=5)).order_by('-request_time').first()
+            email=email, expiration_time__gte=timezone.now()).order_by(
+                '-expiration_time').first()
 
         if not otp_request:
             logger.warning(f"No valid OTP request found for {email}.")
             return False, "OTP expired or not found."
 
-        if otp_request.is_valid(otp_input):
+        if check_password(otp_input, otp_request.otp):  # Securely compare OTPs
             logger.info(f"OTP successfully verified for {email}.")
             return True, "OTP verified successfully."
 

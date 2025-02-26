@@ -1,15 +1,17 @@
-# from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-# from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
+from datetime import timedelta
 from .models import User, OTPRequest, UserProfile
 from .serializers import UserSerializer, UserProfileSerializer
-from .otp import generate_otp, send_otp_email
+from .otp import generate_otp, send_otp_email, can_send_otp
+from asgiref.sync import sync_to_async
+import json
 
 
 # Token Refresh View
@@ -36,25 +38,51 @@ class TokenRefreshView(APIView):
 
 # User Registration View
 class UserRegisterView(APIView):
+    """
+    Handles user registration synchronously.
+    Assumes frontend has already checked for existing username/email.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            user = serializer.save()  # Save user
             otp = generate_otp()
-            OTPRequest.objects.create(user=user, otp=otp)
+            OTPRequest.objects.create(user=user,
+                                      email=user.email,
+                                      otp=otp,
+                                      expiration_time=now() +
+                                      timedelta(minutes=5))
             response = send_otp_email(user.email, otp)
 
             return Response(
                 {
-                    "user_id":
-                    user.id,
-                    "response":
-                    response, # will return true if otp is sent on correct address 
+                    "user_id": user.id,
+                    "response": response,  # True if OTP is sent successfully
                 },
                 status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- ASYNC USER CHECK VIEW ---
+class AsyncUserCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    async def post(self, request):
+        data = json.loads(request.body)
+        username = data.get("username")
+        email = data.get("email")
+
+        username_exists = await User.objects.filter(username=username
+                                                    ).aexists()
+        email_exists = await User.objects.filter(email=email).aexists()
+
+        return Response({
+            "username_exists": username_exists,
+            "email_exists": email_exists
+        })
 
 
 # User Login View
@@ -76,7 +104,11 @@ class UserLoginView(APIView):
 
         if not user.is_verified:  # type: ignore
             otp = generate_otp()
-            OTPRequest.objects.create(user=user, otp=otp)
+            OTPRequest.objects.create(user=user,
+                                      email=user.email,
+                                      otp=otp,
+                                      expiration_time=now() +
+                                      timedelta(minutes=5))
             send_otp_email(user.email, otp)
             return Response(
                 {
@@ -108,13 +140,11 @@ class OTPVerifyView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         otp_request = OTPRequest.objects.filter(
-            user_id=user_id).order_by("-request_time").first()
-        if not otp_request:
-            return Response({"error": "OTP request not found."},
-                            status=status.HTTP_404_NOT_FOUND)
+            user_id=user_id,
+            expiration_time__gte=now()).order_by("-request_time").first()
 
-        if otp_request.is_expired():
-            return Response({"error": "OTP expired."},
+        if not otp_request:
+            return Response({"error": "OTP expired or not found."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if otp_input != otp_request.otp:
@@ -135,13 +165,54 @@ class OTPVerifyView(APIView):
             status=status.HTTP_200_OK)
 
 
+# Resend OTP View
+class ResendOTPView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"error": "User ID is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_object_or_404(User, id=user_id)
+
+        if user.is_verified:
+            return Response({"error": "User is already verified."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        status_message, message = can_send_otp(user.email)
+        if not status_message:
+            return Response({"error": message},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove expired OTPs before resending
+        OTPRequest.objects.filter(user=user,
+                                  expiration_time__lt=now()).delete()
+
+        # Generate and send a new OTP
+        new_otp = generate_otp()
+        otp_request = OTPRequest.objects.create(user=user,
+                                                email=user.email,
+                                                otp=new_otp,
+                                                expiration_time=now() +
+                                                timedelta(minutes=5))
+
+        if send_otp_email(user.email, new_otp):
+            return Response({"message": "New OTP sent successfully."},
+                            status=status.HTTP_200_OK)
+
+        otp_request.delete()  # Remove OTP if sending fails
+        return Response({"error": "Failed to send OTP. Please try again."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
 # User Profile View
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        # Ensure the UserProfile is created if it doesn't exist
         user_profile, created = UserProfile.objects.get_or_create(user=user)
         serializer = UserProfileSerializer(user_profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
