@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -75,11 +76,13 @@ class AsyncUserCheckView(APIView):
         username = data.get("username")
         email = data.get("email")
 
-        username_exists = await User.objects.filter(username=username
-                                                    ).aexists()
-        email_exists = await User.objects.filter(email=email).aexists()
+        # Use sync_to_async to make ORM queries non-blocking
+        username_exists = await sync_to_async(
+            User.objects.filter(username=username).exists)()
+        email_exists = await sync_to_async(
+            User.objects.filter(email=email).exists)()
 
-        return Response({
+        return JsonResponse({
             "username_exists": username_exists,
             "email_exists": email_exists
         })
