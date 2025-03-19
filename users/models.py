@@ -17,27 +17,37 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     email = models.EmailField(unique=True)
 
+    # Use email for login instead of username
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = []  # Username is now optional
+
+    username = models.CharField(max_length=150,
+                                unique=True,
+                                null=True,
+                                blank=True)  # Optional username
 
     def __str__(self):
         return self.email
 
 
-# UserProfile model
 class UserProfile(models.Model):
     user = models.OneToOneField(User,
                                 on_delete=models.CASCADE,
                                 related_name='profile')
 
-    avatar = models.ImageField(upload_to='profile_avatars/',
-                               null=True,
-                               blank=True)
-    full_name = models.CharField(max_length=255)
-    topic_interests = models.TextField()
+    avatar = models.ImageField(
+        upload_to='profile_avatars/',
+        null=True,
+        blank=True,
+        default='profile_avatars/default.png'  # Set default image
+    )
+    full_name = models.CharField(max_length=255, null=True,
+                                 blank=True)  # Optional full name
+    topic_interests = models.TextField(null=True,
+                                       blank=True)  # Optional interests
 
     def __str__(self):
-        return self.full_name
+        return self.full_name if self.full_name else self.user.email
 
 
 # Signal to create UserProfile when a User is created

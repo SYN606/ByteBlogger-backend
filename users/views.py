@@ -1,4 +1,3 @@
-from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,8 +10,6 @@ from datetime import timedelta
 from .models import User, OTPRequest, UserProfile
 from .serializers import UserSerializer, UserProfileSerializer
 from .otp import generate_otp, send_otp_email, can_send_otp
-from asgiref.sync import sync_to_async
-import json
 
 
 # Token Refresh View
