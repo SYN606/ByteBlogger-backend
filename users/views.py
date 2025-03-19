@@ -37,21 +37,35 @@ class TokenRefreshView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-# User Registration View
+# user register view
 class UserRegisterView(APIView):
     """
     Handles user registration synchronously.
-    Assumes frontend has already checked for existing username/email.
+    First, checks if the username or email already exists.
+    If not, registers the user and sends an OTP.
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        data = request.data
+        username = data.get("username")
+        email = data.get("email")
+
+        # Check if username or email already exists
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already taken."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "Email already in use."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Proceed with user registration
+        serializer = UserSerializer(data=data)
         if serializer.is_valid():
-            user = serializer.save()  # Save user
+            user = serializer.save()
             otp = generate_otp()
             OTPRequest.objects.create(user=user,
-                                      email=user.email,
                                       otp=otp,
                                       expiration_time=now() +
                                       timedelta(minutes=5))
@@ -65,27 +79,6 @@ class UserRegisterView(APIView):
                 status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# --- ASYNC USER CHECK VIEW ---
-class AsyncUserCheckView(APIView):
-    permission_classes = [AllowAny]
-
-    async def post(self, request):
-        data = json.loads(request.body)
-        username = data.get("username")
-        email = data.get("email")
-
-        # Use sync_to_async to make ORM queries non-blocking
-        username_exists = await sync_to_async(
-            User.objects.filter(username=username).exists)()
-        email_exists = await sync_to_async(
-            User.objects.filter(email=email).exists)()
-
-        return JsonResponse({
-            "username_exists": username_exists,
-            "email_exists": email_exists
-        })
 
 
 # User Login View

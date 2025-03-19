@@ -7,7 +7,6 @@ from .views import (
     TokenRefreshView,
     LogoutView,
     ResendOTPView,
-    AsyncUserCheckView
 )
 
 urlpatterns = [
@@ -32,5 +31,4 @@ urlpatterns = [
     # Logout view
     path('logout', LogoutView.as_view(), name='logout'),
 
-    path('check-user', AsyncUserCheckView.as_view(), name='check-user'),
 ]
