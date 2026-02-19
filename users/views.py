@@ -66,11 +66,11 @@ class UserRegisterView(APIView):
                                       otp=otp,
                                       expiration_time=now() +
                                       timedelta(minutes=5))
-            response = send_otp_email(user.email, otp)
+            response = send_otp_email(user.email, otp) # type: ignore
 
             return Response(
                 {
-                    "user_id": user.id,
+                    "user_id": user.id, # type: ignore
                     "response": response,  # True if OTP is sent successfully
                 },
                 status=status.HTTP_201_CREATED)

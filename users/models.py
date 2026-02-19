@@ -19,13 +19,12 @@ class User(AbstractUser):
 
     # Use email for login instead of username
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []  # Username is now optional
+    REQUIRED_FIELDS = ['username']
 
     username = models.CharField(max_length=150,
                                 unique=True,
                                 null=True,
-                                blank=True)  # Optional username
-
+                                blank=True)  
     def __str__(self):
         return self.email
 
