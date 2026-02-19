@@ -66,11 +66,11 @@ class UserRegisterView(APIView):
                                       otp=otp,
                                       expiration_time=now() +
                                       timedelta(minutes=5))
-            response = send_otp_email(user.email, otp) # type: ignore
+            response = send_otp_email(user.email, otp)  # type: ignore
 
             return Response(
                 {
-                    "user_id": user.id, # type: ignore
+                    "user_id": user.id,  # type: ignore
                     "response": response,  # True if OTP is sent successfully
                 },
                 status=status.HTTP_201_CREATED)
@@ -237,10 +237,12 @@ class UserProfileView(APIView):
 
 # Logout View
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # updated code
 
     def post(self, request):
         refresh_token = request.data.get("refresh_token")
+
         if not refresh_token:
             return Response({"error": "Refresh token is required."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -250,6 +252,6 @@ class LogoutView(APIView):
             token.blacklist()
             return Response({"message": "Successfully logged out."},
                             status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)},
+        except Exception:
+            return Response({"error": "Invalid or expired refresh token."},
                             status=status.HTTP_400_BAD_REQUEST)

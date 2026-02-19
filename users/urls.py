@@ -20,7 +20,7 @@ urlpatterns = [
     path('verify', OTPVerifyView.as_view(), name='otp-verify'),
 
     # Resend OTP
-    path('resend-otp', ResendOTPView.as_view(), name='resend-otp'),  # New OTP resend endpoint
+    path('resend-otp', ResendOTPView.as_view(), name='resend-otp'),
 
     # User profile (GET and PUT)
     path('profile', UserProfileView.as_view(), name='user-profile'),
@@ -30,5 +30,4 @@ urlpatterns = [
 
     # Logout view
     path('logout', LogoutView.as_view(), name='logout'),
-
 ]
