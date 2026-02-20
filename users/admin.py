@@ -2,34 +2,28 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, UserProfile, OTPRequest
 
+# @admin.register(User)
+# class UserAdmin(BaseUserAdmin):
+#     model = User
 
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    model = User
-    list_display = ('id', 'email', 'username', 'is_verified', 'is_staff',
-                    'is_superuser')
-    list_filter = ('is_verified', 'is_staff', 'is_superuser')
-    search_fields = ('email', 'username')
-    ordering = ('email', )
+#     list_display = ('id', 'email', 'username', 'is_verified', 'is_staff',
+#                     'is_superuser')
 
-    fieldsets = (
-        (None, {
-            'fields': ('email', 'username', 'password')
-        }),
-        ('Permissions', {
-            'fields': ('is_verified', 'is_staff', 'is_superuser', 'groups',
-                       'user_permissions')
-        }),
-        ('Important dates', {
-            'fields': ('last_login', 'date_joined')
-        }),
-    )
+#     list_filter = ('is_verified', 'is_staff', 'is_superuser')
 
-    add_fieldsets = ((None, {
-        'classes': ('wide', ),
-        'fields': ('email', 'username', 'password1', 'password2',
-                   'is_verified', 'is_staff', 'is_superuser'),
-    }), )
+#     search_fields = ('email', 'username')
+
+#     ordering = ('email', )
+
+#     fieldsets = BaseUserAdmin.fieldsets + (('Custom Fields', {
+#         'fields': ('is_verified', ),
+#     }), )  # type: ignore
+
+#     add_fieldsets = BaseUserAdmin.add_fieldsets + (('Custom Fields', {
+#         'fields': ('is_verified', ),
+#     }), )
+
+admin.site.register(User)
 
 
 @admin.register(UserProfile)
@@ -56,4 +50,3 @@ class OTPRequestAdmin(admin.ModelAdmin):
 
     is_expired.boolean = True
     is_expired.short_description = 'Expired'
-
