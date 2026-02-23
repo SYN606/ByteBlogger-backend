@@ -1,52 +1,92 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.html import format_html
+from django.utils import timezone
 from .models import User, UserProfile, OTPRequest
 
-# @admin.register(User)
-# class UserAdmin(BaseUserAdmin):
-#     model = User
 
-#     list_display = ('id', 'email', 'username', 'is_verified', 'is_staff',
-#                     'is_superuser')
+# USER ADMIN
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    model = User
 
-#     list_filter = ('is_verified', 'is_staff', 'is_superuser')
+    list_display = (
+        "id",
+        "email",
+        "username",
+        "is_verified",
+        "is_staff",
+        "is_superuser",
+        "is_active",
+    )
 
-#     search_fields = ('email', 'username')
+    list_filter = (
+        "is_verified",
+        "is_staff",
+        "is_superuser",
+        "is_active",
+    )
 
-#     ordering = ('email', )
+    search_fields = ("email", "username")
+    ordering = ("email", )
 
-#     fieldsets = BaseUserAdmin.fieldsets + (('Custom Fields', {
-#         'fields': ('is_verified', ),
-#     }), )  # type: ignore
+    fieldsets = BaseUserAdmin.fieldsets + (("Verification", {
+        "fields": ("is_verified", )
+    }), )  # type: ignore
 
-#     add_fieldsets = BaseUserAdmin.add_fieldsets + (('Custom Fields', {
-#         'fields': ('is_verified', ),
-#     }), )
-
-admin.site.register(User)
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (("Verification", {
+        "fields": ("is_verified", )
+    }), )
 
 
+# USER PROFILE ADMIN
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'full_name', 'topic_interests')
-    search_fields = ('user__email', 'full_name', 'topic_interests')
+    list_display = ("id", "user", "full_name")
+    search_fields = ("user__email", "full_name")
+    list_select_related = ("user", )
 
 
+# OTP REQUEST ADMIN
 @admin.register(OTPRequest)
 class OTPRequestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'get_email', 'otp', 'request_time',
-                    'expiration_time', 'is_expired')
-    list_filter = ('request_time', 'expiration_time', 'user')
-    search_fields = ('user__email', 'otp')
-    ordering = ('-request_time', )
+    list_display = (
+        "id",
+        "user",
+        "created_at",
+        "expiration_time",
+        "is_used",
+        "expired_status",
+    )
 
-    def get_email(self, obj):
-        return obj.user.email
+    list_filter = (
+        "is_used",
+        "created_at",
+        "expiration_time",
+    )
 
-    get_email.short_description = 'Email'
+    search_fields = ("user__email", )
 
-    def is_expired(self, obj):
-        return obj.is_expired()
+    ordering = ("-created_at", )
 
-    is_expired.boolean = True
-    is_expired.short_description = 'Expired'
+    readonly_fields = (
+        "user",
+        "otp_hash",
+        "created_at",
+        "expiration_time",
+        "is_used",
+    )
+
+    def expired_status(self, obj):
+        if timezone.now() > obj.expiration_time:
+            return format_html('<span style="color:red;">Expired</span>')
+        return format_html('<span style="color:green;">Valid</span>')
+
+    expired_status.short_description = "Status"
+
+    # Prevent manual tampering
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

@@ -22,7 +22,8 @@ venv.bak/
 # Django migrations
 */migrations/*
 !*/migrations/__init__.py
-
+migrations/
+migrations
 # VSCode settings
 .vscode/
 
