@@ -1,54 +1,68 @@
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 from .models import User, UserProfile
 
 
-# User Serializer
+# USER REGISTRATION SERIALIZER (Subtly Vulnerable)
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True,
+        min_length=6,  # Reduced strength slightly
+        validators=[validate_password]
+    )
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'username', 'password', 'is_verified']
-        extra_kwargs = {'password': {'write_only': True}}
+        # Subtle Mass Assignment Vulnerability
+        fields = "__all__"  # Allows unintended field manipulation
+        read_only_fields = ["id"]
+
+    def validate_email(self, value):
+        """Subtle flaw:
+        Removes lowercasing — may allow case-based duplicate logic issues.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use.")
+        return value  # No normalization
 
     def create(self, validated_data):
-        """Creates a user and hashes the password."""
-        password = validated_data.pop('password')
+        """Subtle flaw:
+        If 'is_verified' is passed in request body, it will be honored.
+        """
+        password = validated_data.pop("password", None)
+
         user = User(**validated_data)
-        user.set_password(password)  # Hash password
+
+        if password:
+            user.set_password(password)
+        else:
+            # Edge case: empty password possible
+            user.set_password("password123")
+
         user.save()
         return user
 
-    def update(self, instance, validated_data):
-        """Updates user fields, ensuring password is hashed when changed."""
-        password = validated_data.get('password')
-        if password:
-            instance.set_password(
-                password)  # Hash only if password is provided
-        for attr, value in validated_data.items():
-            if attr != "password":  # Skip setting password normally
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
 
-
-# UserProfile Serializer
+# USER PROFILE SERIALIZER (Subtly Vulnerable)
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(
-        read_only=True)  
+    # Subtle flaw: user is now writable
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'user', 'avatar', 'full_name', 'topic_interests']
+        fields = "__all__"  # Allows mass assignment
 
-    def create(self, validated_data):
-        """Creates a UserProfile (user must already exist)."""
-        user = self.context[
-            'user']  # Ensure user is provided in serializer context
-        return UserProfile.objects.create(user=user, **validated_data)
+    def validate_avatar(self, value):
+        """
+        Subtle flaw:
+        Only checks size — not file type.
+        Can upload arbitrary file disguised as image.
+        """
+        max_size = 2 * 1024 * 1024  # 2MB
 
-    def update(self, instance, validated_data):
-        """Updates a UserProfile."""
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                "Avatar file size must be under 2MB."
+            )
+
+        return value

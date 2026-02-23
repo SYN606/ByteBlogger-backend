@@ -10,19 +10,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'your_default_secret_key')
 
 INSTALLED_APPS = [
-    'jazzmin',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'rest_framework_simplejwt.token_blacklist',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'users',
-    'blog',
-    'corsheaders'
+    'jazzmin', 'django.contrib.admin', 'django.contrib.auth',
+    'django.contrib.contenttypes', 'rest_framework_simplejwt.token_blacklist',
+    'django.contrib.sessions', 'django.contrib.messages',
+    'django.contrib.staticfiles', 'rest_framework', 'rest_framework_simplejwt',
+    'users', 'blog', 'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -37,7 +29,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'ByteBlogger.urls'
 
@@ -129,3 +121,4 @@ LOGGING = {
 }
 
 SIMPLE_JWT = jwt_config.SIMPLE_JWT
+from .jazzmin import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS
