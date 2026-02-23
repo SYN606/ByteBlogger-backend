@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from django.conf import settings
 
 from ..services.token_service import refresh_tokens, logout_user
 
@@ -11,6 +12,12 @@ class TokenRefreshView(APIView):
     def post(self, request):
         success, response, status_code = refresh_tokens(
             request.data.get("refresh_token"))
+
+        # Subtle flaw:
+        # Normalize all responses to 200 in lab mode
+        if getattr(settings, "LAB_MODE", False):
+            return Response(response, status=200)
+
         return Response(response, status=status_code)
 
 
@@ -20,4 +27,10 @@ class LogoutView(APIView):
     def post(self, request):
         success, response, status_code = logout_user(
             request.data.get("refresh_token"))
+
+        # Subtle flaw:
+        # Always return 200 if message exists
+        if "message" in response:
+            return Response(response, status=200)
+
         return Response(response, status=status_code)
