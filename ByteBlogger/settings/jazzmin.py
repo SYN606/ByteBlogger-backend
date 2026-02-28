@@ -1,6 +1,4 @@
-# ===============================
 # JAZZMIN ADMIN CUSTOMIZATION
-# ===============================
 
 JAZZMIN_SETTINGS = {
     "site_title":

@@ -2,10 +2,11 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.utils import timezone
+
 from .models import User, UserProfile, OTPRequest
 
 
-# USER ADMIN
+# USER ADMIN 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     model = User
@@ -30,13 +31,38 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("email", "username")
     ordering = ("email", )
 
-    fieldsets = BaseUserAdmin.fieldsets + (("Verification", {
-        "fields": ("is_verified", )
-    }), )  # type: ignore
+    # IMPORTANT: Do NOT append BaseUserAdmin.fieldsets
+    # Redefine cleanly for Jazzmin tabs to work
+    fieldsets = (
+        ("General", {
+            "fields": ("email", "username", "password"),
+        }),
+        ("Permissions", {
+            "fields": (
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            ),
+        }),
+        ("Verification", {
+            "fields": ("is_verified", ),
+        }),
+        ("Important dates", {
+            "fields": ("last_login", "date_joined"),
+        }),
+    )
 
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (("Verification", {
-        "fields": ("is_verified", )
-    }), )
+    add_fieldsets = (
+        ("General", {
+            "classes": ("wide", ),
+            "fields": ("email", "username", "password1", "password2"),
+        }),
+        ("Verification", {
+            "fields": ("is_verified", ),
+        }),
+    )
 
 
 # USER PROFILE ADMIN
@@ -47,7 +73,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_select_related = ("user", )
 
 
-# OTP REQUEST ADMIN
+# OTP REQUEST ADMIN 
 @admin.register(OTPRequest)
 class OTPRequestAdmin(admin.ModelAdmin):
     list_display = (
@@ -66,7 +92,6 @@ class OTPRequestAdmin(admin.ModelAdmin):
     )
 
     search_fields = ("user__email", )
-
     ordering = ("-created_at", )
 
     readonly_fields = (
@@ -79,8 +104,10 @@ class OTPRequestAdmin(admin.ModelAdmin):
 
     def expired_status(self, obj):
         if timezone.now() > obj.expiration_time:
-            return format_html('<span style="color:red;">Expired</span>')
-        return format_html('<span style="color:green;">Valid</span>')
+            return format_html(
+                '<span style="color:#dc3545;font-weight:bold;">Expired</span>')
+        return format_html(
+            '<span style="color:#28a745;font-weight:bold;">Valid</span>')
 
     expired_status.short_description = "Status"
 

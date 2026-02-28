@@ -23,7 +23,7 @@ venv.bak/
 */migrations/*
 !*/migrations/__init__.py
 migrations/
-migrations
+*migrations
 # VSCode settings
 .vscode/
 

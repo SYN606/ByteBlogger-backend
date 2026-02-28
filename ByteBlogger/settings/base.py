@@ -1,124 +1,154 @@
-import os
+from datetime import timedelta
 from pathlib import Path
+import os
 from dotenv import load_dotenv
-from . import jwt_config
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# DEBUG = False
+# ALLOWED_HOSTS = []
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'your_default_secret_key')
+# SECRET KEY
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key")
 
+# INSTALLED APPS
 INSTALLED_APPS = [
-    'jazzmin', 'django.contrib.admin', 'django.contrib.auth',
-    'django.contrib.contenttypes', 'rest_framework_simplejwt.token_blacklist',
-    'django.contrib.sessions', 'django.contrib.messages',
-    'django.contrib.staticfiles', 'rest_framework', 'rest_framework_simplejwt',
-    'users', 'blog', 'corsheaders'
+    "jazzmin",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
+    "users",
+    "blog",
 ]
 
+# MIDDLEWARE
 MIDDLEWARE = [
-    # django cors
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# URLS
+ROOT_URLCONF = "ByteBlogger.urls"
 
-ROOT_URLCONF = 'ByteBlogger.urls'
-
+# TEMPLATES
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ByteBlogger.wsgi.application'
+WSGI_APPLICATION = "ByteBlogger.wsgi.application"
 
+# PASSWORD VALIDATORS
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME':
-        'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
+        "NAME":
+        "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
     {
-        'NAME':
-        'django.contrib.auth.password_validation.MinimumLengthValidator'
+        "NAME":
+        "django.contrib.auth.password_validation.MinimumLengthValidator"
     },
     {
-        'NAME':
-        'django.contrib.auth.password_validation.CommonPasswordValidator'
+        "NAME":
+        "django.contrib.auth.password_validation.CommonPasswordValidator"
     },
     {
-        'NAME':
-        'django.contrib.auth.password_validation.NumericPasswordValidator'
+        "NAME":
+        "django.contrib.auth.password_validation.NumericPasswordValidator"
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kolkata'
+# INTERNATIONALIZATION
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+# STATIC & MEDIA
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Optional additional static directory
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS = [BASE_DIR / "static"]
 
-AUTH_USER_MODEL = 'users.User'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
+# DEFAULT FIELD TYPE
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# AUTH
+AUTH_USER_MODEL = "users.User"
+
+# REST FRAMEWORK
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
 }
 
+# LOGGING
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler'
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
         },
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'otp_requests.log',
-            'maxBytes': 10485760,
-            'backupCount': 3,
+        "file": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "otp_requests.log",
+            "maxBytes": 10485760,
+            "backupCount": 3,
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
         },
-        'otp': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
+        "otp": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
         },
     },
 }
 
-SIMPLE_JWT = jwt_config.SIMPLE_JWT
+# JWT
+
+# JAZZMIN
 from .jazzmin import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS
+from .jwt_config import SIMPLE_JWT
